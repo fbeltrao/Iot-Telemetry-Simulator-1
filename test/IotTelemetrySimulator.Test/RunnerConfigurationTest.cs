@@ -148,5 +148,27 @@ namespace IotTelemetrySimulator.Test
             Assert.True(templatedPayload.Variables.Variables[0].Sequence);
             Assert.Equal(new[] { "Counter" }, templatedPayload.Variables.Variables[0].GetReferenceVariableNames());
         }
+
+        [Fact]
+        public void When_Loading_From_File_With_Multiple_Payloads_Loads_Correctly()
+        {
+            var configuration = new ConfigurationBuilder()
+                .AddJsonFile("./test_files/test2-config-multiple-payloads.json", false, false)
+                .Build();
+
+            var target = RunnerConfiguration.Load(configuration, NullLogger.Instance);
+            Assert.NotNull(target.PayloadGenerator);
+            Assert.Equal(2, target.PayloadGenerator.Payloads.Length);
+
+            var templatedPayload = Assert.IsType<TemplatedPayload>(target.PayloadGenerator.Payloads[0]);
+            Assert.Equal(2, templatedPayload.Variables.Variables.Count);
+            Assert.True(templatedPayload.Variables.Variables[0].Sequence);
+            Assert.Equal("device0001", templatedPayload.DeviceId);
+            Assert.Equal(new[] { "Counter" }, templatedPayload.Variables.Variables[0].GetReferenceVariableNames());
+
+            var fixPayload = Assert.IsType<FixPayload>(target.PayloadGenerator.Payloads[1]);
+            Assert.Equal("{\"value\":\"myfixvalue\"}", Encoding.UTF8.GetString(fixPayload.Payload));
+            Assert.Equal("device0002", fixPayload.DeviceId);
+        }
     }
 }

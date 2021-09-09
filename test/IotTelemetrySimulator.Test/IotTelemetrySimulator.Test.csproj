@@ -32,6 +32,12 @@
     <AdditionalFiles Include="../../stylecop.json" Link="stylecop.json" />
   </ItemGroup>
   <ItemGroup>
+    <None Update="test_files\test3-config-multiple-devices.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="test_files\test2-config-multiple-payloads.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="test_files\test1-config.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

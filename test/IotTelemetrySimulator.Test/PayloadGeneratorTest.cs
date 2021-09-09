@@ -37,7 +37,7 @@
             foreach (var tt in t)
             {
                 randomizer.Setup(x => x.Next(It.IsAny<int>(), It.IsAny<int>())).Returns(tt.distribution);
-                var (p, v) = target.Generate(null);
+                var (p, v) = target.Generate(null, null);
                 Assert.Equal(tt.expectedPayload, Encoding.UTF8.GetString(p));
             }
         }
@@ -88,7 +88,7 @@
             byte[] result;
             foreach (var expectedValue in expectedValues)
             {
-                (result, variables) = target.Generate(variables);
+                (result, variables) = target.Generate(null, variables);
                 Assert.NotEmpty(variables);
                 Assert.Equal(expectedValue, Encoding.UTF8.GetString(result));
             }

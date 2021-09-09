@@ -65,7 +65,7 @@
                 };
             }
 
-            var (messageBytes, nextVariableValues) = this.Config.PayloadGenerator.Generate(this.variableValues);
+            var (messageBytes, nextVariableValues) = this.Config.PayloadGenerator.Generate(this.deviceId, this.variableValues);
             this.variableValues = nextVariableValues;
 
             TMessage msg = this.BuildMessage(messageBytes);

@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Text;
     using System.Text.RegularExpressions;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.Logging;
@@ -119,7 +120,7 @@
             config.KafkaTopic = configuration.GetValue<string>(nameof(KafkaTopic));
 
             var variablesSection = configuration.GetSection(nameof(Variables));
-            if (variablesSection.Exists())
+            if (variablesSection.Exists() && variablesSection.Value is not string)
             {
                 var values = new List<TelemetryVariable>();
                 variablesSection.Bind(values);
@@ -190,6 +191,27 @@
         }
 
         private static List<PayloadBase> LoadPayloads(IConfiguration configuration, RunnerConfiguration config, ILogger logger, ICollection<string> futureVariableNames)
+        {
+            List<PayloadBase> payloads = null;
+            var payloadSection = configuration.GetSection("Payloads");
+            if (payloadSection.Exists() && payloadSection.Value is not string)
+            {
+                payloads = LoadPayloadsFromSection(payloadSection, configuration, config, logger, futureVariableNames);
+            }
+            else
+            {
+                payloads = LoadPayloadsSimple(configuration, config, logger, futureVariableNames);
+            }
+
+            if (payloads.GroupBy(x => x.DeviceId).Any(g => g.Select(x => x.Distribution).Sum() != 100))
+            {
+                logger.LogWarning("Payload percentage distribution is not equal 100");
+            }
+
+            return payloads;
+        }
+
+        private static List<PayloadBase> LoadPayloadsSimple(IConfiguration configuration, RunnerConfiguration config, ILogger logger, ICollection<string> futureVariableNames)
         {
             var payloads = new List<PayloadBase>();
 
@@ -299,9 +321,29 @@
                     logger.LogWarning("Using default telemetry template");
             }
 
-            if (payloads.Select(x => x.Distribution).Sum() != 100)
+            return payloads;
+        }
+
+        private static List<PayloadBase> LoadPayloadsFromSection(
+            IConfigurationSection payloadSection,
+            IConfiguration configuration,
+            RunnerConfiguration config,
+            ILogger logger,
+            ICollection<string> futureVariableNames)
+        {
+            var payloads = new List<PayloadBase>();
+            foreach (var subSection in payloadSection.GetChildren())
             {
-                logger.LogWarning("Payload percentage distribution is not equal 100");
+                var deviceId = subSection["deviceId"];
+                var distribution = subSection.GetValue("distribution", 100);
+                PayloadBase payload = subSection["type"] switch
+                {
+                    "template" => new TemplatedPayload(distribution, deviceId, new TelemetryTemplate(subSection.GetValue<string>("template"), futureVariableNames), config.Variables),
+                    "fix" => new FixPayload(distribution, deviceId, Encoding.UTF8.GetBytes(subSection.GetValue("value", string.Empty))),
+                    _ => throw new InvalidOperationException("Unknown payload type. Accepted types are [template, fix]"),
+                };
+
+                payloads.Add(payload);
             }
 
             return payloads;
