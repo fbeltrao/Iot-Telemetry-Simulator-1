@@ -118,31 +118,41 @@
 
             config.KafkaTopic = configuration.GetValue<string>(nameof(KafkaTopic));
 
-            var rawValues = configuration.GetValue<string>(nameof(Variables));
-            if (!string.IsNullOrWhiteSpace(rawValues))
+            var variablesSection = configuration.GetSection(nameof(Variables));
+            if (variablesSection.Exists())
             {
-                try
-                {
-                    var values = JsonConvert.DeserializeObject<TelemetryVariable[]>(rawValues);
-                    config.Variables = new TelemetryValues(values);
-                }
-                catch (JsonReaderException ex)
-                {
-                    throw new Exception($"Failed to parse variables from: {rawValues}", ex);
-                }
+                var values = new List<TelemetryVariable>();
+                variablesSection.Bind(values);
+                config.Variables = new TelemetryValues(values);
             }
             else
             {
-                logger.LogWarning("No custom telemetry variables found");
-                config.Variables = new TelemetryValues(new[]
+                var rawValues = configuration.GetValue<string>(nameof(Variables));
+                if (!string.IsNullOrWhiteSpace(rawValues))
                 {
-                    new TelemetryVariable
+                    try
                     {
-                        Min = 1,
-                        Name = "Counter",
-                        Step = 1,
+                        var values = JsonConvert.DeserializeObject<TelemetryVariable[]>(rawValues);
+                        config.Variables = new TelemetryValues(values);
                     }
-                });
+                    catch (JsonReaderException ex)
+                    {
+                        throw new Exception($"Failed to parse variables from: {rawValues}", ex);
+                    }
+                }
+                else
+                {
+                    logger.LogWarning("No custom telemetry variables found");
+                    config.Variables = new TelemetryValues(new[]
+                    {
+                        new TelemetryVariable
+                        {
+                            Min = 1,
+                            Name = "Counter",
+                            Step = 1,
+                        }
+                    });
+                }
             }
 
             var futureVariableNames = config.Variables.VariableNames().ToList();
