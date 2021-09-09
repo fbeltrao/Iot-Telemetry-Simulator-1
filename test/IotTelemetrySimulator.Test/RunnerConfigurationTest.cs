@@ -111,5 +111,26 @@ namespace IotTelemetrySimulator.Test
             Assert.Equal("10", Encoding.UTF8.GetString(fixPayload10.Payload));
             Assert.Equal(2, fixPayload10.Payload.Length);
         }
+
+        [Fact]
+        public void When_Using_Sequence_Payload_Loads_Correctly()
+        {
+            const string rawTemplate = "{\"value\": \"$.Value\" }";
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string>()
+                {
+                    { "Variables", "[{\"name\":\"Value\", \"sequence\":true, \"values\":[\"$.Counter\", \"true\"]}, {\"name\":\"Counter\"}]" },
+                    { "Template", rawTemplate },
+                })
+                .Build();
+
+            var target = RunnerConfiguration.Load(configuration, NullLogger.Instance);
+            Assert.NotNull(target.PayloadGenerator);
+            var payload = Assert.Single(target.PayloadGenerator.Payloads);
+            var templatedPayload = Assert.IsType<TemplatedPayload>(payload);
+            Assert.Equal(2, templatedPayload.Variables.Variables.Count);
+            Assert.True(templatedPayload.Variables.Variables[0].Sequence);
+            Assert.Equal(new[] { "Counter" }, templatedPayload.Variables.Variables[0].GetReferenceVariableNames());
+        }
     }
 }
