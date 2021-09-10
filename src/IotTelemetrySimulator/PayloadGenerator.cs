@@ -36,7 +36,7 @@
             if (this.Payloads.Length == 1)
                 return this.Payloads[0].Generate(variableValues);
 
-            if (this.payloadsPerDevice.TryGetValue(deviceId, out var payloadForDevice))
+            if (!string.IsNullOrEmpty(deviceId) && this.payloadsPerDevice.TryGetValue(deviceId, out var payloadForDevice))
                 return payloadForDevice.Generate(variableValues);
 
             var random = this.randomizer.Next(1, 101);

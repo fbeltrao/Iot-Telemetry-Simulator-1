@@ -12,7 +12,7 @@
         protected const int MaxSendAttempts = 3;
 
         private readonly IRandomizer random = new DefaultRandomizer();
-        private string deviceId;
+        private readonly string deviceId;
         private Dictionary<string, object> variableValues;
 
         protected RunnerConfiguration Config { get; }

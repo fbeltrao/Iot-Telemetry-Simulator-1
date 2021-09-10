@@ -6,8 +6,8 @@
 
     public class TelemetryValues
     {
-        private IRandomizer random = new DefaultRandomizer();
-        string machineName;
+        private readonly IRandomizer random = new DefaultRandomizer();
+        readonly string machineName;
 
         public IList<TelemetryVariable> Variables { get; }
 
